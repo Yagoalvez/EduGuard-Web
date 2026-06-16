@@ -1,0 +1,6 @@
+export * from "./ResponsavelModel"
+export * from "./AlunoModel"
+export * from "./AvisoModel"
+export * from "./ChecklistModel"
+export * from "./EntradaSaidaModel"
+export * from "./NotificacaoModel"

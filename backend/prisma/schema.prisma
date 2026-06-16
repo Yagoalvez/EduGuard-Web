@@ -7,18 +7,6 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model administracaomedicacao {
-  idadministracaomedicacao Int          @id @default(autoincrement())
-  idmedicacao              Int?
-  idfuncionario            Int?
-  data                     DateTime?    @db.Date
-  hora                     DateTime?    @db.Time(6)
-  horainfo                 DateTime?    @db.Time(6)
-  datahorasysdate          DateTime?    @db.Timestamp(6)
-  funcionario              funcionario? @relation(fields: [idfuncionario], references: [idfuncionario], onDelete: NoAction, onUpdate: NoAction, map: "fk_funcionario_idfuncionario")
-  medicacao                medicacao?   @relation(fields: [idmedicacao], references: [idmedicacao], onDelete: NoAction, onUpdate: NoAction, map: "fk_medicacao_idmedicacao")
-}
-
 model aluno {
   idaluno          Int                @id @default(autoincrement())
   foto             Bytes?
@@ -27,26 +15,26 @@ model aluno {
   matricula        String?            @unique @db.VarChar(50)
   ativo            Boolean?
   datacriacao      DateTime?          @db.Timestamp(6)
+  autorizadobusca  autorizadobusca[]
   entradasaida     entradasaida[]
   enturmacao       enturmacao[]
-  medicacao        medicacao[]
+  ocorrencia       ocorrencia[]
   responsavelaluno responsavelaluno[]
   rotinachecklist  rotinachecklist[]
 }
 
 model aviso {
-  idaviso            Int                  @id @default(autoincrement())
-  idturma            Int?
-  idresponsavel      Int?
-  dataentrada        DateTime?            @db.Timestamp(6)
-  datasaida          DateTime?            @db.Timestamp(6)
-  titulo             String?              @db.VarChar(25)
-  descricao          String?              @db.VarChar(500)
-  datacadastro       DateTime?            @db.Date
-  responsavel        responsavel?         @relation(fields: [idresponsavel], references: [idresponsavel], onDelete: NoAction, onUpdate: NoAction, map: "fk_responsavel_idresponsavel")
-  turma              turma?               @relation(fields: [idturma], references: [idturma], onDelete: NoAction, onUpdate: NoAction, map: "fk_turma_idturma")
-  avisoresponsavel   avisoresponsavel[]
-  respostacomunicado respostacomunicado[]
+  idaviso       Int             @id @default(autoincrement())
+  idturma       Int?
+  idresponsavel Int?
+  dataentrada   DateTime?       @db.Timestamp(6)
+  datasaida     DateTime?       @db.Timestamp(6)
+  titulo        String?         @db.VarChar(25)
+  descricao     String?         @db.VarChar(500)
+  datacadastro  DateTime?       @db.Date
+  responsavel   responsavel?    @relation(fields: [idresponsavel], references: [idresponsavel], onDelete: NoAction, onUpdate: NoAction, map: "fk_responsavel_idresponsavel")
+  turma         turma?          @relation(fields: [idturma], references: [idturma], onDelete: NoAction, onUpdate: NoAction, map: "fk_turma_idturma")
+  avisoresposta avisoresposta[]
 }
 
 model checklist {
@@ -79,31 +67,33 @@ model enturmacao {
 }
 
 model funcaofuncionario {
-  idfuncao        Int           @id @default(autoincrement())
-  descricaofuncao String?       @db.VarChar(50)
+  idfuncao        Int     @id @default(autoincrement())
+  descricaofuncao String? @db.VarChar(50)
   funcionario     funcionario[]
 }
 
 model funcionario {
-  idfuncionario          Int                      @id @default(autoincrement())
-  matriculafuncionario   String?                  @db.VarChar(50)
-  nome                   String?                  @db.VarChar(255)
-  cpf                    String?                  @db.VarChar(50)
-  datanascimento         DateTime?                @db.Date
-  dataadmissao           DateTime?                @db.Date
-  idfuncao               Int?
-  ativo                  Boolean?
-  email                  String?                  @db.VarChar(100)
-  senha                  String?                  @db.VarChar(255)
-  foto                   Bytes?
-  idinstituicao          Int?
-  administracaomedicacao administracaomedicacao[]
-  entradasaida           entradasaida[]
-  instituicao            instituicao?             @relation(fields: [idinstituicao], references: [idinstituicao], onDelete: NoAction, onUpdate: NoAction, map: "fk_funcionario_instituicao")
-  funcaofuncionario      funcaofuncionario?       @relation(fields: [idfuncao], references: [idfuncao], onDelete: NoAction, onUpdate: NoAction, map: "fk_funcionario_funcao")
-  rotinachecklist        rotinachecklist[]
-  turma                  turma[]
-  logsistema             logsistema[]
+  idfuncionario        Int               @id @default(autoincrement())
+  matriculafuncionario String?           @db.VarChar(50)
+  nome                 String?           @db.VarChar(255)
+  cpf                  String?           @db.VarChar(50)
+  datanascimento       DateTime?         @db.Date
+  dataadmissao         DateTime?         @db.Date
+  idfuncao             Int?
+  funcaofuncionario    funcaofuncionario? @relation(fields: [idfuncao], references: [idfuncao], onDelete: NoAction, onUpdate: NoAction, map: "fk_funcionario_funcao")
+  ativo                Boolean?
+  email                String?           @db.VarChar(100)
+  senha                String?           @db.VarChar(255)
+  foto                 Bytes?
+  idinstituicao        Int?
+  codigo_recuperacao   String?           @db.VarChar(6)
+  expiracao_codigo     DateTime?         @db.Timestamp(6)
+  entradasaida         entradasaida[]
+  instituicao          instituicao?      @relation(fields: [idinstituicao], references: [idinstituicao], onDelete: NoAction, onUpdate: NoAction, map: "fk_funcionario_instituicao")
+  logsistema           logsistema[]
+  ocorrencia           ocorrencia[]
+  rotinachecklist      rotinachecklist[]
+  turma                turma[]
 
   @@unique([matriculafuncionario, cpf])
 }
@@ -119,41 +109,25 @@ model instituicao {
   turma         turma[]
 }
 
-model medicacao {
-  idmedicacao            Int                      @id @default(autoincrement())
-  idresponsavel          Int?
-  idaluno                Int?
-  nome                   String?                  @db.VarChar(255)
-  descfrequencia         String?                  @db.VarChar(50)
-  dosagem                String?                  @db.VarChar(50)
-  receita                Bytes?
-  dataini                DateTime?                @db.Date
-  datafim                DateTime?                @db.Date
-  diario                 Boolean?
-  semanal                Boolean?
-  administracaomedicacao administracaomedicacao[]
-  aluno                  aluno?                   @relation(fields: [idaluno], references: [idaluno], onDelete: NoAction, onUpdate: NoAction, map: "fk_aluno_idaluno")
-  responsavel            responsavel?             @relation(fields: [idresponsavel], references: [idresponsavel], onDelete: NoAction, onUpdate: NoAction, map: "fk_responsavel_idresponsavel")
-}
-
 model responsavel {
-  idresponsavel      Int                  @id @default(autoincrement())
-  nome               String?              @db.VarChar(255)
-  cpf                String?              @db.VarChar(11)
-  senha              String?              @db.VarChar(255)
+  idresponsavel      Int                @id @default(autoincrement())
+  nome               String?            @db.VarChar(255)
+  cpf                String?            @db.VarChar(11)
   foto               Bytes?
-  celular            String?              @db.VarChar(20)
-  descricaotipo      String?              @db.VarChar(50)
+  celular            String?            @db.VarChar(20)
+  descricaotipo      String?            @db.VarChar(50)
   ativo              Boolean?
-  datacadastro       DateTime?            @db.Timestamp(6)
-  email              String?              @db.VarChar(255)
+  datacadastro       DateTime?          @db.Timestamp(6)
+  email              String?            @db.VarChar(255)
   master             Boolean?
+  senha              String?            @db.VarChar(255)
+  codigo_recuperacao String?            @db.VarChar(6)
+  expiracao_codigo   DateTime?          @db.Timestamp(6)
   aviso              aviso[]
+  avisoresposta      avisoresposta[]
   entradasaida       entradasaida[]
-  medicacao          medicacao[]
+  notificacao        notificacao[]
   responsavelaluno   responsavelaluno[]
-  avisoresponsavel   avisoresponsavel[]
-  respostacomunicado respostacomunicado[]
 
   @@unique([cpf, celular])
 }
@@ -173,8 +147,8 @@ model rotinachecklist {
   idfuncionario     Int?
   datahorasys       DateTime?    @db.Timestamp(6)
   rotinafeita       Boolean?
-  obsden_o          String?      @map("obsdenÃ£o") @db.VarChar(255)
   idrotinachecklist Int          @id @default(autoincrement())
+  obsden_o          String?      @map("obsdenão") @db.VarChar(255)
   aluno             aluno?       @relation(fields: [idaluno], references: [idaluno], onDelete: NoAction, onUpdate: NoAction, map: "fk_aluno_idaluno")
   checklist         checklist?   @relation(fields: [idchecklist], references: [idchecklist], onDelete: NoAction, onUpdate: NoAction, map: "fk_checklist_idchecklist")
   funcionario       funcionario? @relation(fields: [idfuncionario], references: [idfuncionario], onDelete: NoAction, onUpdate: NoAction, map: "fk_funcionario_idfuncionario")
@@ -196,33 +170,61 @@ model turma {
   instituicao      instituicao? @relation(fields: [idinstituicao], references: [idinstituicao], onDelete: NoAction, onUpdate: NoAction, map: "fk_instituicao_idinstituicao")
 }
 
-model avisoresponsavel {
-  idaviso       Int
-  idresponsavel Int
-  aviso         aviso       @relation(fields: [idaviso], references: [idaviso], onDelete: Cascade)
-  responsavel   responsavel @relation(fields: [idresponsavel], references: [idresponsavel], onDelete: Cascade)
-
-  @@id([idaviso, idresponsavel])
-}
-
-model respostacomunicado {
-  idrespostacomunicado Int         @id @default(autoincrement())
-  idaviso              Int
-  idresponsavel        Int
-  mensagem             String      @db.VarChar(500)
-  datahorasysdate      DateTime?   @default(now()) @db.Timestamp(6)
-  aviso                aviso       @relation(fields: [idaviso], references: [idaviso], onDelete: Cascade)
-  responsavel          responsavel @relation(fields: [idresponsavel], references: [idresponsavel], onDelete: Cascade)
-}
-
 model logsistema {
   idlog           Int          @id @default(autoincrement())
   acao            String       @db.VarChar(100)
   entidade        String       @db.VarChar(100)
   identidade      Int?
-  detalhes        String?      @db.Text
+  detalhes        String?
   ip              String?      @db.VarChar(45)
   datahorasysdate DateTime?    @default(now()) @db.Timestamp(6)
   idfuncionario   Int?
-  funcionario     funcionario? @relation(fields: [idfuncionario], references: [idfuncionario], onDelete: SetNull)
+  funcionario     funcionario? @relation(fields: [idfuncionario], references: [idfuncionario], onUpdate: NoAction)
+}
+
+model autorizadobusca {
+  idautorizado Int       @id @default(autoincrement())
+  idaluno      Int
+  nome         String    @db.VarChar(255)
+  cpf          String?   @db.VarChar(14)
+  parentesco   String?   @db.VarChar(50)
+  telefone     String?   @db.VarChar(20)
+  foto_url     String?
+  datacriacao  DateTime? @default(now()) @db.Timestamp(6)
+  aluno        aluno     @relation(fields: [idaluno], references: [idaluno], onDelete: Cascade)
+}
+
+model avisoresposta {
+  idavisoresposta Int         @id @default(autoincrement())
+  idaviso         Int
+  idresponsavel   Int
+  ciente          Boolean     @default(true)
+  resposta        String?
+  dataresposta    DateTime    @default(now()) @db.Timestamp(6)
+  aviso           aviso       @relation(fields: [idaviso], references: [idaviso], onDelete: Cascade)
+  responsavel     responsavel @relation(fields: [idresponsavel], references: [idresponsavel], onDelete: Cascade)
+
+  @@unique([idaviso, idresponsavel])
+}
+
+model notificacao {
+  idnotificacao Int         @id @default(autoincrement())
+  idresponsavel Int
+  titulo        String      @db.VarChar(255)
+  mensagem      String
+  visualizado   Boolean     @default(false)
+  dataenvio     DateTime    @default(now()) @db.Timestamp(6)
+  datacriacao   DateTime    @default(now()) @db.Timestamp(6)
+  responsavel   responsavel @relation(fields: [idresponsavel], references: [idresponsavel], onDelete: Cascade)
+}
+
+model ocorrencia {
+  idocorrencia   Int         @id @default(autoincrement())
+  idaluno        Int
+  idfuncionario  Int
+  titulo         String?     @db.VarChar(100)
+  descricao      String
+  dataocorrencia DateTime    @default(now()) @db.Timestamp(6)
+  aluno          aluno       @relation(fields: [idaluno], references: [idaluno], onDelete: Cascade)
+  funcionario    funcionario @relation(fields: [idfuncionario], references: [idfuncionario], onDelete: Cascade)
 }

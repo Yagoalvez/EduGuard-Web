@@ -194,7 +194,7 @@ async atualizarFoto(
 }
   async buscarPorId(req: Request, res: Response) {
     try {
-      const { id } = req.params;
+      const id = req.params.id as string;
       const responsavel = await prisma.responsavel.findUnique({
         where: { idresponsavel: parseInt(id) },
         include: {
@@ -229,7 +229,7 @@ async atualizarFoto(
 
   async atualizar(req: Request, res: Response) {
     try {
-      const { id } = req.params;
+      const id = req.params.id as string;
       const { nome, cpf, celular, descricao_tipo, email, master, senha } = req.body;
       
       let data: any = {
@@ -275,7 +275,7 @@ async atualizarFoto(
 
   async vincularAluno(req: Request, res: Response) {
     try {
-      const { id } = req.params;
+      const id = req.params.id as string;
       const { id_aluno } = req.body;
       await prisma.responsavelaluno.create({
         data: {
@@ -309,7 +309,8 @@ async atualizarFoto(
 
   async desvincularAluno(req: Request, res: Response) {
     try {
-      const { id, idAluno } = req.params;
+      const id = req.params.id as string;
+      const idAluno = req.params.idAluno as string;
       await prisma.responsavelaluno.deleteMany({
         where: {
           idresponsavel: parseInt(id),
@@ -342,7 +343,7 @@ async atualizarFoto(
 
   async alterarStatus(req: Request, res: Response) {
     try {
-      const { id } = req.params;
+      const id = req.params.id as string;
       const { ativo } = req.body;
       const updated = await prisma.responsavel.update({
         where: { idresponsavel: parseInt(id) },
@@ -380,7 +381,7 @@ async atualizarFoto(
 
   async desativar(req: Request, res: Response) {
     try {
-      const { id } = req.params;
+      const id = req.params.id as string;
       const idresponsavel = parseInt(id);
       const respExistente = await prisma.responsavel.findUnique({
         where: { idresponsavel }
@@ -389,15 +390,13 @@ async atualizarFoto(
         return res.status(404).json({ message: "Responsável não encontrado." });
       }
 
-      const [hasEntradaSaida, hasMedicacao, hasAviso, hasAvisoResp, hasResposta] = await Promise.all([
+      const [hasEntradaSaida, hasAviso, hasAvisoResp] = await Promise.all([
         prisma.entradasaida.count({ where: { idresponsavel } }),
-        prisma.medicacao.count({ where: { idresponsavel } }),
         prisma.aviso.count({ where: { idresponsavel } }),
-        prisma.avisoresponsavel.count({ where: { idresponsavel } }),
-        prisma.respostacomunicado.count({ where: { idresponsavel } })
+        prisma.avisoresposta.count({ where: { idresponsavel } })
       ]);
 
-      const hasHistory = hasEntradaSaida > 0 || hasMedicacao > 0 || hasAviso > 0 || hasAvisoResp > 0 || hasResposta > 0;
+      const hasHistory = hasEntradaSaida > 0 || hasAviso > 0 || hasAvisoResp > 0;
 
       if (hasHistory) {
         await prisma.responsavel.update({

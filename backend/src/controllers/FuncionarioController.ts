@@ -78,8 +78,8 @@ class FuncionarioController {
 
   async atualizar(req: Request, res: Response) {
     try {
-      const { id } = req.params
-      const { nome, email, cpf, senha, id_funcao } = req.body
+      const id = req.params.id as string;
+      const { nome, email, cpf, senha, id_funcao } = req.body;
       
       let data: any = { nome, email, idfuncao: parseInt(id_funcao) }
       if (cpf) data.cpf = cpf.replace(/\D/g, '')
@@ -114,8 +114,8 @@ class FuncionarioController {
 
   async alterarStatus(req: Request, res: Response) {
     try {
-      const { id } = req.params
-      const { ativo } = req.body
+      const id = req.params.id as string;
+      const { ativo } = req.body;
       const idfuncionario = parseInt(id)
       const loggedUser = req.user
 
@@ -160,7 +160,7 @@ class FuncionarioController {
 
   async desativar(req: Request, res: Response) {
     try {
-      const { id } = req.params;
+      const id = req.params.id as string;
       const idfuncionario = parseInt(id);
       const loggedUser = req.user;
 
@@ -175,15 +175,14 @@ class FuncionarioController {
         return res.status(404).json({ message: "Funcionário não encontrado." });
       }
 
-      const [hasEntradaSaida, hasRotina, hasTurma, hasMedicacao, hasLogs] = await Promise.all([
+      const [hasEntradaSaida, hasRotina, hasTurma, hasLogs] = await Promise.all([
         prisma.entradasaida.count({ where: { idfuncionario } }),
         prisma.rotinachecklist.count({ where: { idfuncionario } }),
         prisma.turma.count({ where: { idfuncionario } }),
-        prisma.administracaomedicacao.count({ where: { idfuncionario } }),
         prisma.logsistema.count({ where: { idfuncionario } })
       ]);
 
-      const hasHistory = hasEntradaSaida > 0 || hasRotina > 0 || hasTurma > 0 || hasMedicacao > 0 || hasLogs > 0;
+      const hasHistory = hasEntradaSaida > 0 || hasRotina > 0 || hasTurma > 0 || hasLogs > 0;
 
       if (hasHistory) {
         await prisma.funcionario.update({

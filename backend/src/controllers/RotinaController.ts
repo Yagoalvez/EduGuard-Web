@@ -91,7 +91,7 @@ class RotinaController {
   }
   async listarPorAluno(req: Request, res: Response) {
     try {
-      const { id } = req.params;
+      const id = req.params.id as string;
       const { data } = req.query;
 
       let where: any = { idaluno: parseInt(id) };
@@ -127,7 +127,7 @@ class RotinaController {
 
   async corrigir(req: Request, res: Response) {
     try {
-      const { id } = req.params;
+      const id = req.params.id as string;
       const { realizado, observacao } = req.body;
       
       const rotina = await prisma.rotinachecklist.findUnique({ where: { idrotinachecklist: parseInt(id) } });
