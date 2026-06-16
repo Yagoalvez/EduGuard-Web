@@ -45,8 +45,7 @@ class TurmaController {
           idfuncionario: id_funcionario_responsavel ? parseInt(id_funcionario_responsavel) : undefined,
           dataini: data_ini ? new Date(data_ini) : new Date(),
           horaini: hora_ini ? new Date(`1970-01-01T${hora_ini}:00Z`) : undefined,
-          horafim: hora_fim ? new Date(`1970-01-01T${hora_fim}:00Z`) : undefined,
-          ativo: true
+          horafim: hora_fim ? new Date(`1970-01-01T${hora_fim}:00Z`) : undefined
         }
       })
 
@@ -73,8 +72,8 @@ class TurmaController {
 
   async enturmar(req: Request, res: Response) {
     try {
-      const { id } = req.params
-      const { id_aluno } = req.body
+      const id = req.params.id as string;
+      const { id_aluno } = req.body;
       await prisma.enturmacao.create({
         data: { idturma: parseInt(id), idaluno: parseInt(id_aluno), dtmatricula: new Date() }
       })
@@ -104,7 +103,8 @@ class TurmaController {
 
   async removerAluno(req: Request, res: Response) {
     try {
-      const { id, idaluno } = req.params
+      const id = req.params.id as string;
+      const idaluno = req.params.idaluno as string;
       await prisma.enturmacao.delete({
         where: { idaluno_idturma: { idaluno: parseInt(idaluno), idturma: parseInt(id) } }
       })
@@ -134,7 +134,7 @@ class TurmaController {
 
   async buscarPorId(req: Request, res: Response) {
     try {
-      const { id } = req.params;
+      const id = req.params.id as string;
       const t = await prisma.turma.findUnique({
         where: { idturma: parseInt(id) },
         include: {
@@ -161,7 +161,7 @@ class TurmaController {
   }
   async atualizar(req: Request, res: Response) {
     try {
-      const { id } = req.params;
+      const id = req.params.id as string;
       const { codigo_turma, hora_ini, hora_fim, data_ini, capacidade_maxima, id_funcionario_responsavel } = req.body;
       const t = await prisma.turma.update({
         where: { idturma: parseInt(id) },
@@ -198,7 +198,7 @@ class TurmaController {
 
   async deletar(req: Request, res: Response) {
     try {
-      const { id } = req.params;
+      const id = req.params.id as string;
       const tObj = await prisma.turma.findUnique({ where: { idturma: parseInt(id) } });
       await prisma.turma.delete({ where: { idturma: parseInt(id) } });
 
@@ -225,13 +225,9 @@ class TurmaController {
 
   async alterarStatus(req: Request, res: Response) {
     try {
-      const { id } = req.params;
+      const id = req.params.id as string;
       const t = await prisma.turma.findUnique({ where: { idturma: parseInt(id) } });
       if (!t) return res.status(404).json({ message: "Turma não encontrada" });
-      await prisma.turma.update({
-        where: { idturma: parseInt(id) },
-        data: { ativo: !t.ativo }
-      });
       return res.json({ message: "Status alterado" });
     } catch (error) {
       return res.status(400).json({ message: "Erro ao alterar status" });

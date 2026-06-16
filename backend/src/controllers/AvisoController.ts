@@ -17,17 +17,18 @@ class AvisoController {
         avisos = await prisma.aviso.findMany({
           where: {
             OR: [
-              { idturma: null, avisoresponsavel: { none: {} } }, // geral
+              { idturma: null, idresponsavel: null, avisoresposta: { none: {} } }, // geral
               { idturma: { in: idsTurmas } }, // turma
-              { avisoresponsavel: { some: { idresponsavel: idResponsavel } } } // especifico
+              { idresponsavel: idResponsavel }, // especifico direto
+              { avisoresposta: { some: { idresponsavel: idResponsavel } } } // especifico via avisoresposta
             ]
           },
-          include: { turma: true, respostacomunicado: { include: { responsavel: true } } },
+          include: { turma: true, avisoresposta: { include: { responsavel: true } } },
           orderBy: { datacadastro: 'desc' }
         });
       } else {
         avisos = await prisma.aviso.findMany({
-          include: { turma: true, respostacomunicado: { include: { responsavel: true } }, avisoresponsavel: true },
+          include: { turma: true, avisoresposta: { include: { responsavel: true } } },
           orderBy: { datacadastro: 'desc' }
         });
       }
@@ -39,13 +40,13 @@ class AvisoController {
         data_publicacao: a.datacadastro,
         id_turma: a.idturma,
         turma_nome: a.turma?.codigoturma,
-        responsaveis_ids: a.avisoresponsavel?.map(ar => ar.idresponsavel) || [],
-        aluno_nome: a.avisoresponsavel?.length > 0 ? "Responsáveis Específicos" : null,
-        respostas: a.respostacomunicado.map(r => ({
-          id: r.idrespostacomunicado,
+        responsaveis_ids: a.avisoresposta?.map(ar => ar.idresponsavel) || [],
+        aluno_nome: a.avisoresposta?.length > 0 ? "Responsáveis Específicos" : null,
+        respostas: a.avisoresposta.filter(r => r.resposta !== null).map(r => ({
+          id: r.idavisoresposta,
           nome_responsavel: r.responsavel?.nome,
-          mensagem: r.mensagem,
-          data_hora: r.datahorasysdate
+          mensagem: r.resposta,
+          data_hora: r.dataresposta
         }))
       }));
 
@@ -62,16 +63,18 @@ class AvisoController {
         data: {
           titulo,
           descricao: conteudo,
-          idturma: id_turma ? parseInt(id_turma) : null,
+          idturma: id_turma ? parseInt(id_turma as string) : null,
           datacadastro: new Date()
         }
       });
 
       if (responsaveis && responsaveis.length > 0) {
-        await prisma.avisoresponsavel.createMany({
+        await prisma.avisoresposta.createMany({
           data: responsaveis.map((idR: any) => ({
             idaviso: aviso.idaviso,
-            idresponsavel: parseInt(idR)
+            idresponsavel: parseInt(idR as string),
+            ciente: false,
+            resposta: null
           }))
         });
       }
@@ -99,7 +102,7 @@ class AvisoController {
 
   async atualizar(req: Request, res: Response) {
     try {
-      const { id } = req.params;
+      const id = req.params.id as string;
       const { titulo, conteudo, id_turma, responsaveis } = req.body;
       
       const aviso = await prisma.aviso.update({
@@ -107,17 +110,19 @@ class AvisoController {
         data: {
           titulo,
           descricao: conteudo,
-          idturma: id_turma ? parseInt(id_turma) : null,
+          idturma: id_turma ? parseInt(id_turma as string) : null,
         }
       });
 
       if (responsaveis) {
-        await prisma.avisoresponsavel.deleteMany({ where: { idaviso: parseInt(id) } });
+        await prisma.avisoresposta.deleteMany({ where: { idaviso: parseInt(id) } });
         if (responsaveis.length > 0) {
-          await prisma.avisoresponsavel.createMany({
+          await prisma.avisoresposta.createMany({
             data: responsaveis.map((idR: any) => ({
               idaviso: parseInt(id),
-              idresponsavel: parseInt(idR)
+              idresponsavel: parseInt(idR as string),
+              ciente: false,
+              resposta: null
             }))
           });
         }
@@ -146,7 +151,7 @@ class AvisoController {
 
   async responder(req: Request, res: Response) {
     try {
-      const { id } = req.params;
+      const id = req.params.id as string;
       const { mensagem } = req.body;
       const idResponsavel = req.user?.id;
 
@@ -154,14 +159,33 @@ class AvisoController {
         return res.status(403).json({ message: "Apenas responsáveis podem responder a comunicados" });
       }
 
-      await prisma.respostacomunicado.create({
-        data: {
+      const existing = await prisma.avisoresposta.findFirst({
+        where: {
           idaviso: parseInt(id),
-          idresponsavel: idResponsavel,
-          mensagem: mensagem,
-          datahorasysdate: new Date()
+          idresponsavel: idResponsavel
         }
       });
+
+      if (existing) {
+        await prisma.avisoresposta.update({
+          where: { idavisoresposta: existing.idavisoresposta },
+          data: {
+            ciente: true,
+            resposta: mensagem,
+            dataresposta: new Date()
+          }
+        });
+      } else {
+        await prisma.avisoresposta.create({
+          data: {
+            idaviso: parseInt(id),
+            idresponsavel: idResponsavel,
+            ciente: true,
+            resposta: mensagem,
+            dataresposta: new Date()
+          }
+        });
+      }
 
       // Log
       const responsavel = await prisma.responsavel.findUnique({ where: { idresponsavel: idResponsavel } });
@@ -183,7 +207,7 @@ class AvisoController {
 
   async excluir(req: Request, res: Response) {
     try {
-      const { id } = req.params;
+      const id = req.params.id as string;
       const loggedUser = req.user;
       
       const avisoExistente = await prisma.aviso.findUnique({

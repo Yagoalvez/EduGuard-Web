@@ -43,7 +43,7 @@ class PontoController {
         let dataHora = null;
 
         if (ultimoEvento) {
-           status = ultimoEvento.descricao;
+           status = ultimoEvento.descricao || 'AUSENTE';
            responsavel = ultimoEvento.responsavel?.nome || null;
            dataHora = ultimoEvento.datahorasys;
         }

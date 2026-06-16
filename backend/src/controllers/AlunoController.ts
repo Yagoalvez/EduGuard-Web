@@ -51,7 +51,7 @@ class AlunoController {
 
   async buscarPorId(req: Request, res: Response, next: NextFunction) {
     try {
-      const { id } = req.params;
+      const id = req.params.id as string;
       const aluno = await prisma.aluno.findUnique({
         where: { idaluno: parseInt(id) },
         include: {
@@ -137,7 +137,7 @@ class AlunoController {
 
   async atualizar(req: Request, res: Response, next: NextFunction) {
     try {
-      const { id } = req.params
+      const id = req.params.id as string;
       const { nome, matricula, data_nascimento } = req.body
       let data: any = { nome, matricula, datanascimento: new Date(data_nascimento) }
       if (req.file) data.foto = Buffer.from(req.file.filename, 'utf-8')
@@ -170,7 +170,7 @@ class AlunoController {
 
   async alterarStatus(req: Request, res: Response, next: NextFunction) {
     try {
-      const { id } = req.params;
+      const id = req.params.id as string;
       const { ativo } = req.body;
       const aluno = await prisma.aluno.update({
         where: { idaluno: parseInt(id) },
@@ -202,8 +202,8 @@ class AlunoController {
 
   async vincularResponsavel(req: Request, res: Response, next: NextFunction) {
     try {
-      const { id } = req.params;
-      const { id_responsavel } = req.body;
+      const id = req.params.id as string;
+      const id_responsavel = req.body.id_responsavel as string;
       await prisma.responsavelaluno.create({
         data: {
           idaluno: parseInt(id),
@@ -236,7 +236,8 @@ class AlunoController {
 
   async desvincularResponsavel(req: Request, res: Response, next: NextFunction) {
     try {
-      const { id, idResp } = req.params;
+      const id = req.params.id as string;
+      const idResp = req.params.idResp as string;
       await prisma.responsavelaluno.deleteMany({
         where: {
           idaluno: parseInt(id),
@@ -269,7 +270,7 @@ class AlunoController {
 
   async desativar(req: Request, res: Response, next: NextFunction) {
     try {
-      const { id } = req.params;
+      const id = req.params.id as string;
       const idaluno = parseInt(id);
       
       const alunoExistente = await prisma.aluno.findUnique({
@@ -280,14 +281,13 @@ class AlunoController {
         return res.status(404).json({ message: "Não foi possível encontrar este aluno." });
       }
 
-      const [hasEntradaSaida, hasRotina, hasEnturmacao, hasMedicacao] = await Promise.all([
+      const [hasEntradaSaida, hasRotina, hasEnturmacao] = await Promise.all([
         prisma.entradasaida.count({ where: { idaluno } }),
         prisma.rotinachecklist.count({ where: { idaluno } }),
-        prisma.enturmacao.count({ where: { idaluno } }),
-        prisma.medicacao.count({ where: { idaluno } })
+        prisma.enturmacao.count({ where: { idaluno } })
       ]);
 
-      const hasHistory = hasEntradaSaida > 0 || hasRotina > 0 || hasEnturmacao > 0 || hasMedicacao > 0;
+      const hasHistory = hasEntradaSaida > 0 || hasRotina > 0 || hasEnturmacao > 0;
 
       if (hasHistory) {
         await prisma.aluno.update({

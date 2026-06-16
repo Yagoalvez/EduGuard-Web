@@ -3,6 +3,7 @@ import jwt from "jsonwebtoken"
 interface Payload {
   id: number
   tipo_usuario: string
+  funcao?: string
 }
 
 export function generateToken(payload: Payload) {
